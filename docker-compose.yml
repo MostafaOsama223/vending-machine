@@ -1,0 +1,51 @@
+services:
+    vending-machine-db:
+        image: postgres:14-alpine
+        restart: always
+        container_name: vending-machine-db
+        environment:
+            - POSTGRES_PASSWORD=password
+            - POSTGRES_USER=root
+            - POSTGRES_DB=postgres
+        ports:
+            - "5432:5432"
+        networks:
+            - custom_network
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready" ]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+
+    vending-machine:
+        image: vending-machine:1.0
+        container_name: vending-machine
+        ports:
+            - "8087:8087"
+        environment:
+            - SPRING_APPLICATION_NAME=vending-machine
+            - SPRING_R2DBC_URL=r2dbc:postgresql://vending-machine-db:5432/postgres
+            - SPRING_R2DBC_USERNAME=root
+            - SPRING_R2DBC_PASSWORD=password
+        depends_on:
+            vending-machine-db:
+                condition: service_healthy
+        networks:
+            - custom_network
+
+    adminer:
+        image: adminer
+        container_name: adminer
+        environment:
+            - ADMINER_DEFAULT_SERVER=vending-machine-db
+            - ADMINER_DEFAULT_DB=postgres
+            - ADMINER_DEFAULT_USER=root
+            - ADMINER_DEFAULT_PASSWORD=password
+        ports:
+            - "8088:8080"
+        networks:
+            - custom_network
+
+networks:
+    custom_network:
+        driver: bridge
