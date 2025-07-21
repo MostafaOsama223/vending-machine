@@ -4,10 +4,15 @@ spring:
 
   r2dbc:
     name: postgres
+    url: r2dbc:postgresql://localhost:5432/postgres
+    username: root
+    password: password
 
   jpa:
+    generate-ddl: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
+
     show-sql: true
 
 server:
