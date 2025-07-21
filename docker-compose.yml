@@ -35,7 +35,7 @@ services:
             - custom_network
 
     vending-machine:
-        image: vending-machine:1.0
+        image: vending-machine:latest
         container_name: vending-machine
         ports:
             - "8087:8087"
