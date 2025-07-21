@@ -1,10 +1,10 @@
 CREATE TABLE IF NOT EXISTS "products" (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    amount INTEGER NOT NULL CHECK (amount >= 0),
-    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
+    amount INTEGER NOT NULL CHECK (amount > 0),
+    price DECIMAL(10, 2) NOT NULL CHECK (price > 0),
     seller_id BIGINT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (seller_id) REFERENCES "users" (id)
+    FOREIGN KEY (seller_id) REFERENCES "sellers" (id)
 );
