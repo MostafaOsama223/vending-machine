@@ -2,9 +2,7 @@ package com.flapkap.vending.machine.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,6 +11,7 @@ import java.util.Collection;
 
 @Getter
 @Entity
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "buyers")
@@ -28,6 +27,7 @@ public class Buyer implements UserDetails {
     @Column(nullable = false)
     private String password;
 
+    @Setter
     @Min(value = 0, message = "Deposit must be at least 0")
     private int deposit;
 
