@@ -41,9 +41,9 @@ services:
             - "8087:8087"
         environment:
             - SPRING_APPLICATION_NAME=vending-machine
-            - SPRING_R2DBC_URL=r2dbc:postgresql://vending-machine-db:5432/postgres
-            - SPRING_R2DBC_USERNAME=root
-            - SPRING_R2DBC_PASSWORD=password
+            - SPRING_DATASOURCE_URL=jdbc:postgresql://vending-machine-db:5432/postgres
+            - SPRING_DATASOURCE_USERNAME=root
+            - SPRING_DATASOURCE_PASSWORD=password
         depends_on:
             vending-machine-db:
                 condition: service_healthy
