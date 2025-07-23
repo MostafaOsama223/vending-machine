@@ -36,3 +36,8 @@ docker-compose up
 - Username enumeration is possible.
 - Implement JWT authentication for secure user sessions.
 - Implement rate limiting to prevent abuse.
+- Write unit tests for controller and repository layers.
+- Write integration tests using Testcontainers.
+- Audit transactions for security and compliance.
+- /buy api is prone to race conditions.
+- /deposit api is prone to race conditions.
