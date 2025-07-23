@@ -1,6 +1,6 @@
 package com.flapkap.vending.machine.service.impl;
 
-import com.flapkap.vending.machine.CoinDenomination;
+import com.flapkap.vending.machine.enums.CoinDenomination;
 import com.flapkap.vending.machine.dto.DepositMoneyRequest;
 import com.flapkap.vending.machine.model.Buyer;
 import com.flapkap.vending.machine.repo.BuyerRepo;

@@ -1,4 +1,4 @@
-package com.flapkap.vending.machine;
+package com.flapkap.vending.machine.enums;
 
 public enum CoinDenomination {
     CENT_5(5),

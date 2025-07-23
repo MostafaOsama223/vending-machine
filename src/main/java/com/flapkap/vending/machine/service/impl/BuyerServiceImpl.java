@@ -14,6 +14,7 @@ import com.flapkap.vending.machine.service.ProductService;
 import com.flapkap.vending.machine.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -21,6 +22,7 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BuyerServiceImpl implements UserService, BuyerService {
@@ -46,11 +48,15 @@ public class BuyerServiceImpl implements UserService, BuyerService {
 
     @Override
     public void registerBuyer(RegisterBuyerRequest dto) throws BadRequestException {
+        log.info("Registering buyer with username: {}", dto.username());
+
         if (dto.deposit() < 0 || dto.deposit() % 5 != 0)
             throw new BadRequestException("Deposit must be a non-negative multiple of 5");
 
         if (buyerRepo.existsByUsername(dto.username()))
             throw new BadRequestException("Username already exists");
+
+        log.info("Creating new buyer with username: {}", dto.username());
 
         Buyer buyer = Buyer.builder()
                 .username(dto.username())
@@ -59,6 +65,8 @@ public class BuyerServiceImpl implements UserService, BuyerService {
                 .build();
 
         buyerRepo.saveAndFlush(buyer);
+
+        log.info("Buyer registered successfully with username: {}", dto.username());
     }
 
     @Override
@@ -68,6 +76,8 @@ public class BuyerServiceImpl implements UserService, BuyerService {
         buyer.setDeposit(buyer.getDeposit() + dto.coin().getValue());
 
         buyerRepo.saveAndFlush(buyer);
+
+        log.info("Buyer {} deposited {}. New balance: {}", buyer.getUsername(), dto.coin().getValue(), buyer.getDeposit());
 
         return buyer.getDeposit();
     }
@@ -79,11 +89,16 @@ public class BuyerServiceImpl implements UserService, BuyerService {
         buyer.setDeposit(0);
 
         buyerRepo.saveAndFlush(buyer);
+
+        log.info("Buyer {} reset balance to 0", buyer.getUsername());
     }
 
     @Override
     @Transactional
     public BuyProductResponse buyProduct(BuyProductRequest dto) throws BadRequestException {
+
+        log.info("Processing purchase for product ID: {} with amount: {}", dto.productId(), dto.amount());
+
         Buyer buyer = getLoggedInUser();
         Product product = productServiceImpl.getById(dto.productId());
 
@@ -94,6 +109,9 @@ public class BuyerServiceImpl implements UserService, BuyerService {
         buyerRepo.saveAndFlush(buyer);
 
         productServiceImpl.removeFromStock(dto.productId(), dto.amount());
+
+        log.info("Buyer {} successfully purchased {} of product {}. Remaining balance: {}",
+                buyer.getUsername(), dto.amount(), product.getName(), buyer.getDeposit());
 
         return new BuyProductResponse(
                 dto.amount() * product.getPrice(),
