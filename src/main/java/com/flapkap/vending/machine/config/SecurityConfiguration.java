@@ -1,67 +1,100 @@
 package com.flapkap.vending.machine.config;
 
+import com.flapkap.vending.machine.service.impl.BuyerServiceImpl;
+import com.flapkap.vending.machine.service.impl.SellerServiceImpl;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.SecurityFilterChain;
 
-import static org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers.pathMatchers;
+import static org.springframework.security.web.util.matcher.RegexRequestMatcher.regexMatcher;
 
 @Slf4j
 @Configuration
-@EnableWebFluxSecurity
+@EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfiguration {
 
+    private final BuyerServiceImpl buyerService;
+    private final SellerServiceImpl sellerService;
+
     @Bean
-    public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) throws Exception {
+    @Order(1)
+    public SecurityFilterChain publicFilterChain(HttpSecurity http) throws Exception {
         return http
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .authorizeExchange(exchange -> exchange
-                        .matchers(
-                                pathMatchers(HttpMethod.GET, "/api/v*/public/**"),
-                                pathMatchers(HttpMethod.POST, "/api/v*/buyer"),
-                                pathMatchers(HttpMethod.POST, "/api/v*/seller")
-                        ).permitAll()
-
-                        .matchers(
-                                pathMatchers(HttpMethod.POST, "/api/v*/products"),
-                                pathMatchers(HttpMethod.PUT, "/api/v*/products/.*"),
-                                pathMatchers(HttpMethod.DELETE, "/api/v*/products/.*")
-                        ).hasRole("SELLER")
-
-                        .matchers(
-                                pathMatchers(HttpMethod.POST, "/api/v*/deposit"),
-                                pathMatchers(HttpMethod.POST, "/api/v*/buy"),
-                                pathMatchers(HttpMethod.POST, "/api/v*/reset")
-                        ).hasRole("BUYER")
-
-                        .anyExchange().authenticated())
+                .securityMatchers(matchers -> matchers
+                        .requestMatchers(HttpMethod.GET, "/api/v*/products/**")
+                        .requestMatchers(HttpMethod.POST, "/api/v*/buyers/register")
+                        .requestMatchers(HttpMethod.POST, "/api/v*/sellers/register")
+                )
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(request -> request
+                        .requestMatchers(HttpMethod.GET, "/api/v*/products/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v*/buyers/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v*/seller/register").permitAll()
+                        .anyRequest().authenticated())
                 .formLogin(Customizer.withDefaults()).httpBasic(Customizer.withDefaults())
                 .build();
     }
 
     @Bean
-    public MapReactiveUserDetailsService userDetailsService() {
-        UserDetails sellerUser = User.withDefaultPasswordEncoder()
-                .username("seller")
-                .password("password")
-                .roles("SELLER", "USER")
+    @Order(2)
+    public SecurityFilterChain sellersFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .securityMatchers(matchers -> matchers
+                        .requestMatchers(
+                                regexMatcher(HttpMethod.POST, "/api/v\\d+/products"),
+                                regexMatcher(HttpMethod.PUT, "/api/v\\d+/products/\\d+"),
+                                regexMatcher(HttpMethod.DELETE, "/api/v\\d+/products/\\d+")
+                        )
+                )
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(request -> request
+                        .requestMatchers(
+                                regexMatcher(HttpMethod.POST, "/api/v\\d+/products"),
+                                regexMatcher(HttpMethod.PUT, "/api/v\\d+/products/\\d+"),
+                                regexMatcher(HttpMethod.DELETE, "/api/v\\d+/products/\\d+")
+                        ).hasRole("SELLER")
+                        .anyRequest().authenticated())
+                .formLogin(Customizer.withDefaults()).httpBasic(Customizer.withDefaults())
+                .userDetailsService(sellerService)
                 .build();
+    }
 
-        UserDetails buyerUser = User.withDefaultPasswordEncoder()
-                .username("buyer")
-                .password("password")
-                .roles("BUYER", "USER")
+    @Bean
+    @Order(3)
+    public SecurityFilterChain buyersFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .securityMatcher("/api/v*/buyers/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(request -> request
+                        .requestMatchers(
+                                regexMatcher(HttpMethod.POST, "/api/v\\d+/buyers/deposit"),
+                                regexMatcher(HttpMethod.POST, "/api/v\\d+/buyers/buy"),
+                                regexMatcher(HttpMethod.POST, "/api/v\\d+/buyers/reset")
+                        ).hasRole("BUYER")
+                        .anyRequest().authenticated())
+                .formLogin(Customizer.withDefaults()).httpBasic(Customizer.withDefaults())
+                .userDetailsService(buyerService)
                 .build();
+    }
 
-        return new MapReactiveUserDetailsService(sellerUser, buyerUser);
+    @Bean
+    public RoleHierarchy roleHierarchy() {
+        RoleHierarchyImpl roleHierarchy = new RoleHierarchyImpl();
+        roleHierarchy.setHierarchy("ROLE_SELLER > ROLE_ANONYMOUS\n" + "ROLE_BUYER > ROLE_ANONYMOUS\n"
+                + "ROLE_USER > ROLE_ANONYMOUS\n");
+
+        return roleHierarchy;
     }
 
 }
