@@ -17,25 +17,8 @@ services:
             timeout: 10s
             retries: 5
 
-    liquibase:
-        image: liquibase/liquibase
-        container_name: liquibase
-        depends_on:
-            vending-machine-db:
-                condition: service_healthy
-        volumes:
-            - ./changelog:/liquibase/changelog
-            - ./liquibase.properties:/liquibase/liquibase.properties
-        environment:
-            - LIQUIBASE_COMMAND_URL=jdbc:postgresql://vending-machine-db:5432/postgres
-            - LIQUIBASE_COMMAND_USERNAME=root
-            - LIQUIBASE_COMMAND_PASSWORD=password
-        command: ["--defaults-file=/liquibase/liquibase.properties", "update"]
-        networks:
-            - custom_network
-
     vending-machine:
-        image: vending-machine:latest
+        image: "mostafaosama/vending-machine:latest"
         container_name: vending-machine
         ports:
             - "8087:8087"
@@ -44,6 +27,10 @@ services:
             - SPRING_DATASOURCE_URL=jdbc:postgresql://vending-machine-db:5432/postgres
             - SPRING_DATASOURCE_USERNAME=root
             - SPRING_DATASOURCE_PASSWORD=password
+            - SPRING_LIQUIBASE_CHANGELOG=classpath:db/changelog/db.changelog-master.xml
+            - SPRING_LIQUIBASE_URL=jdbc:postgresql://vending-machine-db:5432/postgres
+            - SPRING_LIQUIBASE_USER=root
+            - SPRING_LIQUIBASE_PASSWORD=password
         depends_on:
             vending-machine-db:
                 condition: service_healthy
