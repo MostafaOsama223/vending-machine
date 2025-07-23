@@ -3,6 +3,7 @@ package com.flapkap.vending.machine.service.impl;
 import com.flapkap.vending.machine.dto.BuyProductRequest;
 import com.flapkap.vending.machine.dto.BuyProductResponse;
 import com.flapkap.vending.machine.dto.DepositMoneyRequest;
+import com.flapkap.vending.machine.dto.RegisterBuyerRequest;
 import com.flapkap.vending.machine.exception.BadRequestException;
 import com.flapkap.vending.machine.exception.ResourceNotFoundException;
 import com.flapkap.vending.machine.model.Buyer;
@@ -15,6 +16,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,6 +27,7 @@ public class BuyerServiceImpl implements UserService, BuyerService {
 
     private final BuyerRepo buyerRepo;
     private final ProductService productServiceImpl;
+    private final PasswordEncoder passwordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
 
     @Override
     public Buyer getByUsername(String username) throws IllegalStateException {
@@ -37,6 +42,23 @@ public class BuyerServiceImpl implements UserService, BuyerService {
         Buyer buyer = getByUsername(userDetails.getUsername());
 
         return buyer;
+    }
+
+    @Override
+    public void registerBuyer(RegisterBuyerRequest dto) throws BadRequestException {
+        if (dto.deposit() < 0 || dto.deposit() % 5 != 0)
+            throw new BadRequestException("Deposit must be a non-negative multiple of 5");
+
+        if (buyerRepo.existsByUsername(dto.username()))
+            throw new BadRequestException("Username already exists");
+
+        Buyer buyer = Buyer.builder()
+                .username(dto.username())
+                .password(passwordEncoder.encode(dto.password()))
+                .deposit(dto.deposit())
+                .build();
+
+        buyerRepo.saveAndFlush(buyer);
     }
 
     @Override
@@ -61,7 +83,7 @@ public class BuyerServiceImpl implements UserService, BuyerService {
 
     @Override
     @Transactional
-    public BuyProductResponse buyProduct(BuyProductRequest dto) throws IllegalStateException {
+    public BuyProductResponse buyProduct(BuyProductRequest dto) throws BadRequestException {
         Buyer buyer = getLoggedInUser();
         Product product = productServiceImpl.getById(dto.productId());
 
@@ -78,5 +100,11 @@ public class BuyerServiceImpl implements UserService, BuyerService {
                 buyer.getDeposit(),
                 product.getName()
         );
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return buyerRepo.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Buyer not found with username: " + username));
     }
 }

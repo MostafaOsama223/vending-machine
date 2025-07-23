@@ -3,9 +3,11 @@ package com.flapkap.vending.machine.api;
 import com.flapkap.vending.machine.dto.BuyProductRequest;
 import com.flapkap.vending.machine.dto.BuyProductResponse;
 import com.flapkap.vending.machine.dto.DepositMoneyRequest;
+import com.flapkap.vending.machine.dto.RegisterBuyerRequest;
 import com.flapkap.vending.machine.service.BuyerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +22,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class BuyerController {
 
     private final BuyerService buyerServiceImpl;
+
+    @PostMapping("/register")
+    public ResponseEntity<Void> registerBuyer(@RequestBody @Valid RegisterBuyerRequest dto) {
+        buyerServiceImpl.registerBuyer(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
 
     @PostMapping("/buy")
     public ResponseEntity<BuyProductResponse> buyProduct(@RequestBody @Valid BuyProductRequest dto) {

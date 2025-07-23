@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface BuyerRepo extends JpaRepository<Buyer, Integer> {
 
     Optional<Buyer> findByUsername(String username);
+
+    boolean existsByUsername(String username);
 }
