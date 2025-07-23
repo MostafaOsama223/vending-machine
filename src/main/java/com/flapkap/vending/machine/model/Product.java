@@ -27,13 +27,13 @@ public class Product {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @Min(value = 1, message = "Amount must be at least 1")
+    @Min(value = 0, message = "Amount must be at least 0")
     private int amount;
 
     @Min(value = 1, message = "Price must be at least 1")
     private int price;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id", referencedColumnName = "id")
     private Seller seller;
 

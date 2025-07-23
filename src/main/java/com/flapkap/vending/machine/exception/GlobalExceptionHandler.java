@@ -25,6 +25,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGeneralException(Exception ex) {
-        return ResponseEntity.status(500).body("An unexpected error occurred: " + ex.getMessage());
+        return ResponseEntity.status(500).body("An unexpected error occurred.");
     }
 }

@@ -40,7 +40,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(HttpMethod.GET, "/api/v*/products/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v*/buyers/register").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v*/seller/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v*/sellers/register").permitAll()
                         .anyRequest().authenticated())
                 .formLogin(Customizer.withDefaults()).httpBasic(Customizer.withDefaults())
                 .build();
